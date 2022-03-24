@@ -3,6 +3,6 @@
     "dev": "deno task gen && deno run --allow-read --allow-write --allow-run --allow-env --allow-net --watch main.ts",
     "start": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net main.ts",
     "gen": "deno run --allow-read --allow-write --allow-run https://deno.land/x/xuybin_fresh/cli.ts manifest",
-    "githook": "deno run --allow-write=.git https://deno.land/x/xuybin_fresh/src/cli/githook.ts"
+    "githook": "deno run --allow-write https://deno.land/x/xuybin_fresh/src/cli/githook.ts"
   }
 }
