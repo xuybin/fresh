@@ -2,15 +2,14 @@
 
 ### Usage
 
-Start the project:
+install git hook:
 
 ```
-deno run -A --watch main.ts
+deno task githook
 ```
 
-After adding, removing, or moving a page in the `routes` or directory, or
-adding, removing, or moving an island in the `islands` directory, run:
+develop your project:
 
 ```
-fresh manifest
+deno task dev
 ```

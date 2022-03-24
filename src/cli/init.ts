@@ -167,6 +167,10 @@ export const handler = (_req: Request, _ctx: HandlerContext): Response => {
 /// <reference lib="dom.asynciterable" />
 /// <reference lib="deno.ns" />
 /// <reference lib="deno.unstable" />
+/// <reference types="${new URL(
+      "../types.d.ts",
+      import.meta.url,
+    )}" />
 
 import { start } from "./server_deps.ts";
 import manifest from "./fresh.gen.ts";
@@ -180,22 +184,35 @@ await start(manifest);
   } catch {
     // this throws on windows
   }
+  const DENO_JSONC = `{
+    "tasks": {
+      "dev": "deno task gen && deno run --allow-read --allow-write --allow-run --allow-env --allow-net --watch main.ts",
+      "start": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net main.ts",
+      "gen": "deno run --allow-read --allow-write --allow-run https://deno.land/x/xuybin_fresh/cli.ts manifest",
+      "githook": "deno run --allow-write=.git https://deno.land/x/xuybin_fresh/src/cli/githook.ts"
+    }
+  }
+`;
+
+  await Deno.writeTextFile(
+    join(directory, "deno.jsonc"),
+    DENO_JSONC,
+  );
 
   const README_MD = `# fresh project
 
 ### Usage
 
-Start the project:
+install git hook:
 
 \`\`\`
-deno run -A --watch main.ts
+deno task githook
 \`\`\`
 
-After adding, removing, or moving a page in the \`routes\` or directory, or adding,
-removing, or moving an island in the \`islands\` directory, run:
+develop your project:
 
 \`\`\`
-fresh manifest
+deno task dev
 \`\`\`
 `;
   await Deno.writeTextFile(

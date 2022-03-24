@@ -1,3 +1,10 @@
+/// <reference no-default-lib="true" />
+/// <reference lib="dom" />
+/// <reference lib="dom.asynciterable" />
+/// <reference lib="deno.ns" />
+/// <reference lib="deno.unstable" />
+/// <reference types="../types.d.ts" />
+
 import { ServerContext } from "../server.ts";
 import { REFRESH_JS_URL } from "../src/server/constants.ts";
 import { assert, assertEquals, assertStringIncludes } from "./deps.ts";

@@ -7,14 +7,14 @@ This is the fresh website source. The fresh website contains:
 
 ### Usage
 
-Start the project:
+install git hook:
 
 ```
-deno run -A --watch main.ts
+deno task githook
 ```
 
-After adding, removing, or moving a page in the `pages` directory, run:
+develop your project:
 
 ```
-fresh routes
+deno task dev
 ```

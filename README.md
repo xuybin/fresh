@@ -28,7 +28,7 @@ To install, run the following command. This will add `fresh` CLI to your PATH.
 Make sure to have Deno 1.12.0 or later installed.
 
 ```sh
-deno install -A -f --no-check -n fresh -r https://raw.githubusercontent.com/lucacasonato/fresh/main/cli.ts
+deno install -A -f --no-check -n fresh -r https://deno.land/x/xuybin_fresh/cli.ts
 ```
 
 ## Getting started
