@@ -1,3 +1,5 @@
+/// <reference types="../types.d.ts" />
+
 export * from "../runtime.ts";
 import { IS_BROWSER } from "../runtime.ts";
 import { apply, setup, tw } from "https://esm.sh/twind@0.16.16";

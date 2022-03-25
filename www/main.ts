@@ -3,7 +3,6 @@
 /// <reference lib="dom.asynciterable" />
 /// <reference lib="deno.ns" />
 /// <reference lib="deno.unstable" />
-/// <reference types="../types.d.ts" />
 
 import { start } from "./server_deps.ts";
 import routes from "./fresh.gen.ts";

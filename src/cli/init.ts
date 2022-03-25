@@ -60,12 +60,20 @@ async function init(directory: string) {
   await Deno.mkdir(join(directory, "routes", "api"), { recursive: true });
   await Deno.mkdir(join(directory, "islands"), { recursive: true });
 
-  const CLIENT_DEPS_TS = `export * from "${new URL(
+  const CLIENT_DEPS_TS = `/// <reference types="${new URL(
+    "../../types.d.ts",
+    import.meta.url,
+  )}" />
+export * from "${new URL(
     "../../runtime.ts",
     import.meta.url,
   )}";\n`;
   await Deno.writeTextFile(join(directory, "client_deps.ts"), CLIENT_DEPS_TS);
-  const SERVER_DEPS_TS = `export * from "${new URL(
+  const SERVER_DEPS_TS = `/// <reference types="${new URL(
+    "../../types.d.ts",
+    import.meta.url,
+  )}" />
+export * from "${new URL(
     "../../server.ts",
     import.meta.url,
   )}";\n`;
@@ -167,10 +175,6 @@ export const handler = (_req: Request, _ctx: HandlerContext): Response => {
 /// <reference lib="dom.asynciterable" />
 /// <reference lib="deno.ns" />
 /// <reference lib="deno.unstable" />
-/// <reference types="${new URL(
-      "../../types.d.ts",
-      import.meta.url,
-    )}" />
 
 import { start } from "./server_deps.ts";
 import manifest from "./fresh.gen.ts";
