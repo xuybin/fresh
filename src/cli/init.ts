@@ -168,7 +168,7 @@ export const handler = (_req: Request, _ctx: HandlerContext): Response => {
 /// <reference lib="deno.ns" />
 /// <reference lib="deno.unstable" />
 /// <reference types="${new URL(
-      "../types.d.ts",
+      "../../types.d.ts",
       import.meta.url,
     )}" />
 
