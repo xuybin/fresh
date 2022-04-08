@@ -68,8 +68,11 @@ export async function startSubcommand(rawArgs: Record<string, any>) {
   }
   const manifest = ((await import(importUrl)) as any).default as Manifest;
   // command line variable override
+  console.log('manifest.static:'+manifest.static)
+  console.log('rawArgs.static:'+rawArgs.static)
   if(rawArgs.static){
-    manifest.static = resolve(Deno.cwd(), rawArgs.static);
+    manifest.static = toFileUrl(resolve(Deno.cwd(), rawArgs.static)).href;
+    console.log('manifest.static:'+manifest.static)
   }
   const ctx = await ServerContext.fromManifest(manifest);
   console.log("Server listening on http://localhost:8000");
@@ -105,7 +108,7 @@ if (import.meta.main) {
       "port":8000
     },
   });
-  if (args.version) {
+  if (args.info) {
     console.log(`${import.meta.url}`);
     Deno.exit(0);
   }else{

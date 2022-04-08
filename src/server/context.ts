@@ -235,7 +235,9 @@ export class ServerContext {
         manifest.static ? manifest.static : "./static",
         manifest.baseUrl,
       );
+      console.log("staticFolder1:"+staticFolder)
       if (staticFolder.protocol == "file:") {
+        console.log("staticFolder2:"+staticFolder)
         // TODO(lucacasonato): remove the extranious Deno.readDir when
         // https://github.com/denoland/deno_std/issues/1310 is fixed.
         for await (const _ of Deno.readDir(fromFileUrl(staticFolder))) {
