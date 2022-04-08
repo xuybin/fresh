@@ -108,7 +108,7 @@ export class ServerContext {
         }
         module = (module as any).module;
       }
-      console.log("module:"+module?true:false)
+      console.log("module:"+(module?true:false))
       if (!url) {
         url = new URL(self, baseUrl).href;
         path = url.substring(baseUrl.length).substring("routes".length);
