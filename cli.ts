@@ -1,6 +1,7 @@
 import { parseArgs } from "./src/cli/deps.ts";
 import { initSubcommand } from "./src/cli/init.ts";
 import { manifestSubcommand } from "./src/cli/manifest.ts";
+import { startSubcommand } from "./src/cli/start.ts";
 
 const VERSION = "0.1.0";
 
@@ -13,9 +14,13 @@ To initalize a new project:
 To (re-)generate the manifest file:
   fresh manifest
 
+To start from route file:
+fresh start
+
 SUBCOMMANDS:
     init      Initalize a fresh project
     manifest  (Re-)generate the manifest file
+    start     Start from route file
 `;
 
 const args = parseArgs(Deno.args, {
@@ -36,6 +41,9 @@ switch (subcommand) {
     break;
   case "manifest":
     await manifestSubcommand(args);
+    break;
+  case "start":
+    await startSubcommand(args);
     break;
   default:
     if (args.version) {
