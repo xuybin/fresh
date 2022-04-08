@@ -1,3 +1,4 @@
+// deno-lint-ignore-file
 /// <reference no-default-lib="true" />
 /// <reference lib="dom" />
 /// <reference lib="dom.asynciterable" />
@@ -5,27 +6,30 @@
 /// <reference lib="deno.unstable" />
 /// <reference types="../../types.d.ts" />
 
-import { Manifest, start } from "../server/mod.ts";
+import { Manifest, ServerContext,serveTls,serve } from "../server/mod.ts";
 import { error } from "./error.ts";
-import { resolve, toFileUrl } from "https://deno.land/std/path/mod.ts";
-import { parseArgs } from "./deps.ts";
+import { parseArgs,resolve, toFileUrl } from "./deps.ts";
 
 const help = `fresh start
 
 Start from route file.
 
 To start local route file:
-  fresh start ./fresh.gen.ts
+  COMMAND ./fresh.gen.ts
 
 To start remote route file:
-  fresh start https://raw.githubusercontents.com/xuybin/fresh/main/examples/counter/fresh.gen.ts
+  COMMAND https://raw.githubusercontents.com/xuybin/fresh/main/examples/counter/fresh.gen.ts
 
 USAGE:
-    fresh start <ROUTE>
+    COMMAND [OPTIONS] <ROUTE>
 
 OPTIONS:
     -h, --help                 Prints help information
-    -i, --info                 Prints this command info
+    -p, --port                 serve port
+    -s,--static                serve static directory
+    -c,--certFile              serveTls certFile
+    -k,--keyFile               serveTls keyFile
+    -i,--info                  Prints this command info   
 `;
 export interface Args {
   help: boolean;
@@ -60,22 +64,46 @@ export async function startSubcommand(rawArgs: Record<string, any>) {
     } catch (err) {
       error("given route file not isFile.");
     }
+    
   }
-  const manifest = await import(importUrl);
-  //console.error(JSON.stringify(manifest.default));
-  await start(manifest.default as Manifest);
+  const manifest = ((await import(importUrl)) as any).default as Manifest;
+  // command line variable override
+  if(rawArgs.static){
+    manifest.static = resolve(Deno.cwd(), rawArgs.static);
+  }
+  const ctx = await ServerContext.fromManifest(manifest);
+  console.log("Server listening on http://localhost:8000");
+  if(rawArgs.certFile && rawArgs.keyFile){
+    serveTls(ctx.handler(), {
+      port: rawArgs.port,
+      certFile: rawArgs.certFile,
+      keyFile: rawArgs.keyFile,
+    });
+  }else{
+    await serve(ctx.handler(), {
+      port: rawArgs.port,
+    });
+  }
 }
 
 if (import.meta.main) {
   const args = parseArgs(Deno.args, {
     alias: {
-      "help": ["h","H"],
-      "info": ["i","I"],
+      "help": "h",
+      "info": "i",
+      "port":"p",
+      "static":["s","public"],
+      "certFile":["c","cert"],
+      "keyFile":["k","key"],
     },
     boolean: [
       "help",
       "info",
     ],
+    string:["port","static","certFile","keyFile"],
+    default:{
+      "port":8000
+    },
   });
   if (args.version) {
     console.log(`${import.meta.url}`);

@@ -10,6 +10,7 @@ import {
   walk,
 } from "./deps.ts";
 import { Manifest } from "./mod.ts";
+import { IslandModule } from "./types.ts";
 import { Bundler } from "./bundle.ts";
 import { ALIVE_URL, BUILD_ID, JS_PREFIX, REFRESH_JS_URL } from "./constants.ts";
 import DefaultErrorHandler from "./default_error_page.tsx";
@@ -104,22 +105,18 @@ export class ServerContext {
       ) {
         if ((module as any).url) {
           url = (module as any).url;
-          path=self.replace("./routes","")
+          path = self.replace("./routes", "");
         }
         module = (module as any).module;
       }
-      console.log("module:"+(module?true:false))
       if (!url) {
         url = new URL(self, baseUrl).href;
         path = url.substring(baseUrl.length).substring("routes".length);
       }
-      console.log("url:"+url)
-
       // if (!url.startsWith(baseUrl)) {
       //   throw new TypeError("Page is not a child of the basepath.");
       // }
-      
-      console.log("path:"+path)
+
       const baseRoute = path.substring(1, path.length - extname(path).length);
       const name = baseRoute.replace("/", "-");
       if (!path.startsWith("/_")) {
@@ -201,21 +198,43 @@ export class ServerContext {
     }
     sortRoutes(pages);
 
-    for (const [self, module] of Object.entries(manifest.islands)) {
-      const url = new URL(self, baseUrl).href;
-      if (!url.startsWith(baseUrl)) {
-        throw new TypeError("Page is not a child of the basepath.");
+    for (let [self, module] of Object.entries(manifest.islands)) {
+      let url = "";
+      let path = "";
+      if (
+        Object.prototype.hasOwnProperty.call(module, "module") ||
+        (module as any).module
+      ) {
+        if ((module as any).url) {
+          url = (module as any).url;
+          path = self.replace("./islands", "");
+        }
+        module = (module as any).module;
       }
-      const path = url.substring(baseUrl.length).substring("islands".length);
+      if (!url) {
+        url = new URL(self, baseUrl).href;
+        path = url.substring(baseUrl.length).substring("islands".length);
+      }
+      // if (!url.startsWith(baseUrl)) {
+      //   throw new TypeError("Page is not a child of the basepath.");
+      // }
       const baseRoute = path.substring(1, path.length - extname(path).length);
       const name = baseRoute.replace("/", "");
       const id = name.toLowerCase();
-      islands.push({ id, name, url, component: module.default });
+      islands.push({
+        id,
+        name,
+        url,
+        component: (module as IslandModule).default,
+      });
     }
 
     const staticFiles: StaticFile[] = [];
     try {
-      const staticFolder = new URL("./static", manifest.baseUrl);
+      const staticFolder = new URL(
+        manifest.static ? manifest.static : "./static",
+        manifest.baseUrl,
+      );
       if (staticFolder.protocol == "file:") {
         // TODO(lucacasonato): remove the extranious Deno.readDir when
         // https://github.com/denoland/deno_std/issues/1310 is fixed.

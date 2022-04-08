@@ -1,5 +1,5 @@
 import { ServerContext } from "./context.ts";
-import { serve } from "./deps.ts";
+import { serve,serveTls } from "./deps.ts";
 import {
   AppModule,
   ErrorPageModule,
@@ -15,6 +15,7 @@ export type {
   Handlers,
   MiddlewareHandlerContext,
 } from "./types.ts";
+
 export { RenderContext } from "./render.tsx";
 export type { RenderFn } from "./render.tsx";
 
@@ -38,16 +39,20 @@ export interface Manifest {
         | UnknownPageModule;
     }
   >;
-  islands: Record<string, IslandModule>;
+  islands: Record<string, IslandModule|{
+    url?: string;
+    module:IslandModule;
+  }>;
+  static?:string
   baseUrl: string;
 }
 
-export { ServerContext };
+export { ServerContext,serve,serveTls };
 
 export async function start(routes: Manifest) {
   const ctx = await ServerContext.fromManifest(routes);
   console.log("Server listening on http://localhost:8000");
   await serve(ctx.handler(), {
-    port: 8000,
+    port: 8000
   });
 }

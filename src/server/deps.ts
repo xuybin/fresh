@@ -8,7 +8,7 @@ export {
   toFileUrl,
 } from "https://deno.land/std/path/mod.ts";
 export { walk } from "https://deno.land/std/fs/walk.ts";
-export { serve } from "https://deno.land/std/http/server.ts";
+export { serve,serveTls } from "https://deno.land/std/http/server.ts";
 export type {
   ConnInfo,
   Handler as RequestHandler,
