@@ -27,6 +27,16 @@ export interface Manifest {
     | AppModule
     | ErrorPageModule
     | UnknownPageModule
+    | {
+      url?: string;
+      module:
+        | PageModule
+        | RendererModule
+        | MiddlewareModule
+        | AppModule
+        | ErrorPageModule
+        | UnknownPageModule;
+    }
   >;
   islands: Record<string, IslandModule>;
   baseUrl: string;

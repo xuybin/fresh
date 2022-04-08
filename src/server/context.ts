@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import {
   ConnInfo,
   extname,
@@ -94,11 +95,25 @@ export class ServerContext {
     let app: AppModule = DEFAULT_APP;
     let notFound: UnknownPage = DEFAULT_NOT_FOUND;
     let error: ErrorPage = DEFAULT_ERROR;
-    for (const [self, module] of Object.entries(manifest.routes)) {
-      const url = new URL(self, baseUrl).href;
-      if (!url.startsWith(baseUrl)) {
-        throw new TypeError("Page is not a child of the basepath.");
+    for (let [self, module] of Object.entries(manifest.routes)) {
+      let url = "";
+      if (
+        Object.prototype.hasOwnProperty.call(module, "module") ||
+        (module as any).module
+      ) {
+        if ((module as any).url) {
+          url = (module as any).url;
+        }
+        module = (module as any).module;
       }
+
+      if (!url) {
+        url = new URL(self, baseUrl).href;
+      }
+
+      // if (!url.startsWith(baseUrl)) {
+      //   throw new TypeError("Page is not a child of the basepath.");
+      // }
       const path = url.substring(baseUrl.length).substring("routes".length);
       const baseRoute = path.substring(1, path.length - extname(path).length);
       const name = baseRoute.replace("/", "-");

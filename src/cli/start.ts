@@ -25,6 +25,7 @@ USAGE:
 
 OPTIONS:
     -h, --help                 Prints help information
+    -i, --info                 Prints this command info
 `;
 export interface Args {
   help: boolean;
@@ -68,12 +69,12 @@ export async function startSubcommand(rawArgs: Record<string, any>) {
 if (import.meta.main) {
   const args = parseArgs(Deno.args, {
     alias: {
-      "help": "h",
-      "version": "V",
+      "help": ["h","H"],
+      "info": ["i","I"],
     },
     boolean: [
       "help",
-      "version",
+      "info",
     ],
   });
   if (args.version) {
