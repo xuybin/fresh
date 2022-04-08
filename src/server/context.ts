@@ -97,24 +97,29 @@ export class ServerContext {
     let error: ErrorPage = DEFAULT_ERROR;
     for (let [self, module] of Object.entries(manifest.routes)) {
       let url = "";
+      let path = "";
       if (
         Object.prototype.hasOwnProperty.call(module, "module") ||
         (module as any).module
       ) {
         if ((module as any).url) {
           url = (module as any).url;
+          path=self.replace("./routes","")
         }
         module = (module as any).module;
       }
-
+      console.log("module:"+module)
       if (!url) {
         url = new URL(self, baseUrl).href;
+        path = url.substring(baseUrl.length).substring("routes".length);
       }
+      console.log("url:"+url)
 
       // if (!url.startsWith(baseUrl)) {
       //   throw new TypeError("Page is not a child of the basepath.");
       // }
-      const path = url.substring(baseUrl.length).substring("routes".length);
+      
+      console.log("path:"+path)
       const baseRoute = path.substring(1, path.length - extname(path).length);
       const name = baseRoute.replace("/", "-");
       if (!path.startsWith("/_")) {
