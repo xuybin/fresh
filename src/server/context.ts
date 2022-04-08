@@ -196,39 +196,41 @@ export class ServerContext {
     const staticFiles: StaticFile[] = [];
     try {
       const staticFolder = new URL("./static", manifest.baseUrl);
-      // TODO(lucacasonato): remove the extranious Deno.readDir when
-      // https://github.com/denoland/deno_std/issues/1310 is fixed.
-      for await (const _ of Deno.readDir(fromFileUrl(staticFolder))) {
-        // do nothing
-      }
-      const entires = walk(fromFileUrl(staticFolder), {
-        includeFiles: true,
-        includeDirs: false,
-        followSymlinks: false,
-      });
-      const encoder = new TextEncoder();
-      for await (const entry of entires) {
-        const localUrl = toFileUrl(entry.path);
-        const path = localUrl.href.substring(staticFolder.href.length);
-        const stat = await Deno.stat(localUrl);
-        const contentType = mediaTypeLookup(extname(path)) ??
-          "application/octet-stream";
-        const etag = await crypto.subtle.digest(
-          "SHA-1",
-          encoder.encode(BUILD_ID + path),
-        ).then((hash) =>
-          Array.from(new Uint8Array(hash))
-            .map((byte) => byte.toString(16).padStart(2, "0"))
-            .join("")
-        );
-        const staticFile: StaticFile = {
-          localUrl,
-          path,
-          size: stat.size,
-          contentType,
-          etag,
-        };
-        staticFiles.push(staticFile);
+      if (staticFolder.protocol == "file:") {
+        // TODO(lucacasonato): remove the extranious Deno.readDir when
+        // https://github.com/denoland/deno_std/issues/1310 is fixed.
+        for await (const _ of Deno.readDir(fromFileUrl(staticFolder))) {
+          // do nothing
+        }
+        const entires = walk(fromFileUrl(staticFolder), {
+          includeFiles: true,
+          includeDirs: false,
+          followSymlinks: false,
+        });
+        const encoder = new TextEncoder();
+        for await (const entry of entires) {
+          const localUrl = toFileUrl(entry.path);
+          const path = localUrl.href.substring(staticFolder.href.length);
+          const stat = await Deno.stat(localUrl);
+          const contentType = mediaTypeLookup(extname(path)) ??
+            "application/octet-stream";
+          const etag = await crypto.subtle.digest(
+            "SHA-1",
+            encoder.encode(BUILD_ID + path),
+          ).then((hash) =>
+            Array.from(new Uint8Array(hash))
+              .map((byte) => byte.toString(16).padStart(2, "0"))
+              .join("")
+          );
+          const staticFile: StaticFile = {
+            localUrl,
+            path,
+            size: stat.size,
+            contentType,
+            etag,
+          };
+          staticFiles.push(staticFile);
+        }
       }
     } catch (err) {
       if (err instanceof Deno.errors.NotFound) {
