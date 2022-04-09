@@ -1,5 +1,6 @@
 import { ComponentType } from "../runtime/deps.ts";
-import { ConnInfo, router } from "./deps.ts";
+import { ConnInfo, router,RequestHandler } from "./deps.ts";
+
 import {
   AppProps,
   ErrorPageProps,
@@ -47,7 +48,8 @@ export interface ErrorHandlerContext extends ConnInfo {
 }
 
 export interface MiddlewareHandlerContext extends ConnInfo {
-  handle: () => Promise<Response>;
+  //handle: (req: Request,ctx:ConnInfo) => Promise<Response>;
+  handle:RequestHandler
 }
 
 // deno-lint-ignore no-explicit-any

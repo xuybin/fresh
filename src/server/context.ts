@@ -235,9 +235,9 @@ export class ServerContext {
         manifest.static ? manifest.static : "./static",
         manifest.baseUrl,
       );
-      console.log("staticFolder1:"+staticFolder)
+      //console.log("staticFolder1:"+staticFolder)
       if (staticFolder.protocol == "file:") {
-        console.log("staticFolder2:"+staticFolder)
+        //console.log("staticFolder2:"+staticFolder)
         // TODO(lucacasonato): remove the extranious Deno.readDir when
         // https://github.com/denoland/deno_std/issues/1310 is fixed.
         for await (const _ of Deno.readDir(fromFileUrl(staticFolder))) {
@@ -308,7 +308,7 @@ export class ServerContext {
         url.pathname = url.pathname.slice(0, -1);
         return Response.redirect(url.href, 307);
       }
-      const handle = () => Promise.resolve(inner(req, connInfo));
+      const handle:RequestHandler = (req1,connInfo1) => Promise.resolve(inner(req1, connInfo1));
       return middleware.handler(req, { handle, ...connInfo });
     };
   }
@@ -555,7 +555,7 @@ const DEFAULT_RENDERER: Renderer = {
 };
 
 const DEFAULT_MIDDLEWARE: Middleware = {
-  handler: (_, ctx) => ctx.handle(),
+  handler: (req, ctx) => ctx.handle(req,ctx),
 };
 
 const DEFAULT_APP: AppModule = {

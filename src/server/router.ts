@@ -1,35 +1,47 @@
-import { ConnInfo, RequestHandler } from "./deps.ts";
+import { ConnInfo } from "./deps.ts";
 
 declare global {
-  // @ts-ignore  temporary workaround until URLPattern is defined
-  // deno-lint-ignore no-explicit-any
-  const URLPattern: any;
+
+   // deno-lint-ignore no-explicit-any
+   type URLPattern=any
+   // deno-lint-ignore no-explicit-any
+   const URLPattern:any;
 }
+
+
+
+type HandlerContext<T = unknown> = T & ConnInfo;
+
+export type Handler<T = unknown> = (
+  req: Request,
+  ctx: HandlerContext<T>,
+) => Response | Promise<Response>;
+
 /**
  * A handler type for anytime the `MatchHandler` or `other` parameter handler
  * fails
  */
-export type ErrorHandler = (
+export type ErrorHandler<T = unknown> = (
   req: Request,
-  connInfo: ConnInfo,
+  ctx: HandlerContext<T>,
   err: unknown,
 ) => Response | Promise<Response>;
 
 /**
  * A handler type for anytime a method is received that is not defined
  */
-export type UnknownMethodHandler = (
+export type UnknownMethodHandler<T = unknown> = (
   req: Request,
-  connInfo: ConnInfo,
+  ctx: HandlerContext<T>,
   knownMethods: string[],
 ) => Response | Promise<Response>;
 
 /**
  * A handler type for a router path match which gets passed the matched values
  */
-export type MatchHandler = (
+export type MatchHandler<T = unknown> = (
   req: Request,
-  connInfo: ConnInfo,
+  ctx: HandlerContext<T>,
   match: Record<string, string>,
 ) => Response | Promise<Response>;
 
@@ -41,7 +53,8 @@ export type MatchHandler = (
  * to prefix a route with a method name and the `@` sign. For example a route only
  * accepting `GET` requests would look like: `GET@/`.
  */
-export type Routes = Record<string, MatchHandler>;
+// deno-lint-ignore ban-types
+export type Routes<T = {}> = Record<string, MatchHandler<T>>;
 
 /**
  * The default other handler for the router
@@ -57,7 +70,7 @@ export function defaultOtherHandler(_req: Request): Response {
  */
 export function defaultErrorHandler(
   _req: Request,
-  _connInfo: ConnInfo,
+  _ctx: HandlerContext,
   err: unknown,
 ): Response {
   console.error(err);
@@ -72,7 +85,7 @@ export function defaultErrorHandler(
  */
 export function defaultUnknownMethodHandler(
   _req: Request,
-  _connInfo: ConnInfo,
+  _ctx: HandlerContext,
   knownMethods: string[],
 ): Response {
   return new Response(null, {
@@ -100,7 +113,7 @@ const methodRegex = new RegExp(`(?<=^(?:${METHODS.join("|")}))@`);
  *
  * ```
  * import { serve } from "https://deno.land/std/http/server.ts";
- * import { router } from "https://crux.land/router@0.0.6";
+ * import { router } from "https://crux.land/router@0.0.9";
  *
  * await serve(
  *   router({
@@ -118,41 +131,38 @@ const methodRegex = new RegExp(`(?<=^(?:${METHODS.join("|")}))@`);
  * that is not defined is used
  * @returns A deno std compatible request handler
  */
-export function router(
-  routes: Routes,
-  other: RequestHandler = defaultOtherHandler,
-  error: ErrorHandler = defaultErrorHandler,
-  unknownMethod: UnknownMethodHandler = defaultUnknownMethodHandler,
-): RequestHandler {
-  return async (req, connInfo) => {
+export function router<T = unknown>(
+  routes: Routes<T>,
+  other: Handler<T> = defaultOtherHandler,
+  error: ErrorHandler<T> = defaultErrorHandler,
+  unknownMethod: UnknownMethodHandler<T> = defaultUnknownMethodHandler,
+): Handler<T> {
+  const internalRoutes: Record<string, { pattern: URLPattern, methods: Record<string, MatchHandler<T>> }> = {};
+  for (const [route, handler] of Object.entries(routes)) {
+    let [methodOrPath, path] = route.split(methodRegex);
+    let method = methodOrPath;
+    if (!path) {
+      path = methodOrPath;
+      method = "any";
+    }
+    const r = internalRoutes[path] ?? {
+      pattern: new URLPattern({ pathname: path }),
+      methods: {}
+    };
+    r.methods[method] = handler;
+    internalRoutes[path] = r;
+  }
+
+  return async (req, ctx) => {
     try {
-      // route > method > handler
-      const internalRoutes: Record<string, Record<string, MatchHandler>> = {};
-
-      for (const [route, handler] of Object.entries(routes)) {
-        const [methodOrPath, path] = route.split(methodRegex);
-
-        if (path) {
-          internalRoutes[path] ??= {};
-          internalRoutes[path][methodOrPath] = handler;
-        } else {
-          internalRoutes[methodOrPath] ??= {};
-          internalRoutes[methodOrPath]["any"] = handler;
-        }
-      }
-
-      for (const [path, methods] of Object.entries(internalRoutes)) {
-        const pattern = new URLPattern({
-          pathname: path,
-        });
+      for (const { pattern, methods } of Object.values(internalRoutes)) {
         const res = pattern.exec(req.url);
-
         if (res !== null) {
           for (const [method, handler] of Object.entries(methods)) {
             if (req.method === method) {
               return await handler(
                 req,
-                connInfo,
+                ctx,
                 res.pathname.groups,
               );
             }
@@ -160,18 +170,22 @@ export function router(
           if (methods["any"]) {
             return await methods["any"](
               req,
-              connInfo,
+              ctx,
               res.pathname.groups,
             );
           } else {
-            return await unknownMethod(req, connInfo, Object.keys(methods));
+            return await unknownMethod(
+              req,
+              ctx,
+              Object.keys(methods),
+            );
           }
         }
       }
 
-      return await other(req, connInfo);
+      return await other(req, ctx);
     } catch (err) {
-      return error(req, connInfo, err);
+      return error(req, ctx, err);
     }
   };
 }
