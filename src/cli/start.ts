@@ -71,7 +71,10 @@ export async function startSubcommand(rawArgs: Record<string, any>) {
   console.log('manifest.static:'+manifest.static)
   console.log('rawArgs.static:'+rawArgs.static)
   if(rawArgs.static){
-    manifest.static = toFileUrl(resolve(Deno.cwd(), rawArgs.static)).href;
+    if(manifest.static){
+      error("given routes file already contains static files.");
+    }
+    manifest.static = {'_':toFileUrl(resolve(Deno.cwd(), rawArgs.static)).href};
     console.log('manifest.static:'+manifest.static)
   }
   const ctx = await ServerContext.fromManifest(manifest);

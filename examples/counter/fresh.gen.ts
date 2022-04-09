@@ -26,6 +26,11 @@ const manifest = {
       module:$$1
     },
   },
+  static:{
+    '/a1.css':'./static/abc.css',
+    '/a2.css':'https://raw.githubusercontents.com/xuybin/fresh/main/examples/counter/static/abc.css',
+    '/abc.css':'./static/abc.css'
+  },
   baseUrl: import.meta.url,
 };
 

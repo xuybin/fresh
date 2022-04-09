@@ -43,7 +43,7 @@ export interface Manifest {
     url?: string;
     module:IslandModule;
   }>;
-  static?:string
+  static?:Record<string,string>;
   baseUrl: string;
 }
 

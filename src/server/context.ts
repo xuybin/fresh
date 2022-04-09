@@ -81,6 +81,27 @@ export class ServerContext {
     this.#dev = typeof Deno.env.get("DENO_DEPLOYMENT_ID") !== "string"; // Env var is only set in prod (on Deploy).
   }
 
+  static async #getStaticFile(encoder:TextEncoder,path:string,localUrl: URL,size=0){
+    const contentType = mediaTypeLookup(extname(path)) ??
+      "application/octet-stream";
+    const etag = await crypto.subtle.digest(
+      "SHA-1",
+      encoder.encode(BUILD_ID + path),
+    ).then((hash) =>
+      Array.from(new Uint8Array(hash))
+        .map((byte) => byte.toString(16).padStart(2, "0"))
+        .join("")
+    );
+    const staticFile: StaticFile = {
+      localUrl,
+      path,
+      size,
+      contentType,
+      etag,
+    };
+    return staticFile;
+  }
+
   /**
    * Process the manifest into individual components and pages.
    */
@@ -231,46 +252,35 @@ export class ServerContext {
 
     const staticFiles: StaticFile[] = [];
     try {
-      const staticFolder = new URL(
-        manifest.static ? manifest.static : "./static",
-        manifest.baseUrl,
-      );
-      //console.log("staticFolder1:"+staticFolder)
-      if (staticFolder.protocol == "file:") {
-        //console.log("staticFolder2:"+staticFolder)
-        // TODO(lucacasonato): remove the extranious Deno.readDir when
-        // https://github.com/denoland/deno_std/issues/1310 is fixed.
-        for await (const _ of Deno.readDir(fromFileUrl(staticFolder))) {
-          // do nothing
+      const encoder = new TextEncoder();
+      if(!manifest.static || manifest.static['_']){
+        const staticFolder = new URL(
+          (manifest.static&&manifest.static['_']) ? manifest.static['_']: "./static",
+          manifest.baseUrl,
+        );
+        if (staticFolder.protocol == "file:") {
+          // TODO(lucacasonato): remove the extranious Deno.readDir when
+          // https://github.com/denoland/deno_std/issues/1310 is fixed.
+          for await (const _ of Deno.readDir(fromFileUrl(staticFolder))) {
+            // do nothing
+          }
+          const entires = walk(fromFileUrl(staticFolder), {
+            includeFiles: true,
+            includeDirs: false,
+            followSymlinks: false,
+          });
+          
+          for await (const entry of entires) {
+            const localUrl = toFileUrl(entry.path);
+            const path = localUrl.href.substring(staticFolder.href.length);
+            const stat = await Deno.stat(localUrl);
+            staticFiles.push(await ServerContext.#getStaticFile(encoder,path,localUrl,stat.size)); 
+          }
         }
-        const entires = walk(fromFileUrl(staticFolder), {
-          includeFiles: true,
-          includeDirs: false,
-          followSymlinks: false,
-        });
-        const encoder = new TextEncoder();
-        for await (const entry of entires) {
-          const localUrl = toFileUrl(entry.path);
-          const path = localUrl.href.substring(staticFolder.href.length);
-          const stat = await Deno.stat(localUrl);
-          const contentType = mediaTypeLookup(extname(path)) ??
-            "application/octet-stream";
-          const etag = await crypto.subtle.digest(
-            "SHA-1",
-            encoder.encode(BUILD_ID + path),
-          ).then((hash) =>
-            Array.from(new Uint8Array(hash))
-              .map((byte) => byte.toString(16).padStart(2, "0"))
-              .join("")
-          );
-          const staticFile: StaticFile = {
-            localUrl,
-            path,
-            size: stat.size,
-            contentType,
-            etag,
-          };
-          staticFiles.push(staticFile);
+      }else if(manifest.static){
+        for (const [path, url] of Object.entries(manifest.static)) {
+          const localUrl = new URL(url, baseUrl);
+          staticFiles.push(await ServerContext.#getStaticFile(encoder,path,localUrl)); 
         }
       }
     } catch (err) {
@@ -500,11 +510,12 @@ export class ServerContext {
       } else {
         const resp = await fetch(localUrl);
         const headers = new Headers({
-          "content-type": contentType,
-          "content-length": String(size),
-          "etag": etag,
+          "content-type": resp.headers.get("content-type")?resp.headers.get("content-type")!:contentType,
+          "etag": resp.headers.get("etag")?resp.headers.get("etag")!:etag,
         });
-
+        if(size>0||resp.headers.get("content-length")){
+          headers.set("content-length",resp.headers.get("content-length")?resp.headers.get("content-length")!:String(size))
+        }
         if (isCacheable) {
           headers.set("Cache-Control", "public, max-age=31536000, immutable");
         }
